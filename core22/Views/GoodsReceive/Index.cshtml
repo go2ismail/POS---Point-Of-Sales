@@ -1,0 +1,63 @@
+﻿@model IEnumerable<core22.Models.POS.Models.GoodsReceive>
+
+@{
+    ViewData["Title"] = "Goods Receive";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table" id="grid">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Number)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Description)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.GoodsReceiveDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.PurchaseOrder)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Number)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Description)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.GoodsReceiveDate)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.PurchaseOrder.Number)
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.GoodsReceiveId" class="btn btn-warning">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@item.GoodsReceiveId" class="btn btn-success">Details</a> |
+                    <a asp-action="Delete" asp-route-id="@item.GoodsReceiveId" class="btn btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+@section Scripts{
+    <script>
+        $(document).ready(function () {
+            $('#grid').DataTable();
+        });
+    </script>
+}

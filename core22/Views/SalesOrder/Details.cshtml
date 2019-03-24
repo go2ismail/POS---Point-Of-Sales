@@ -1,0 +1,99 @@
+﻿@model core22.Models.POS.Models.SalesOrder
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>SalesOrder</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Number)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Number)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Description)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Description)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.SalesOrderDate)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.SalesOrderDate)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Customer)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Customer.Name)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model.SalesOrderId">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+    <input type="hidden" asp-for="SalesOrderId" />
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <table class="table" id="gridLine" style="width:100%">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">Product</th>
+                    <th scope="col">Quantity</th>
+                    <th scope="col">Price</th>
+                    <th scope="col">SubTotal</th>
+                    <th scope="col">Discount</th>
+                    <th scope="col">Total</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+@section Scripts{
+    <script>
+        $(document).ready(function () {
+            initGridLine();
+        });
+
+        function initGridLine() {
+            var salesOrderId = $("#SalesOrderId").val();
+
+            $("#gridLine").DataTable({
+                "ajax": {
+                    "type": "GET",
+                    "url": "/api/SalesOrderLine/GetLines?salesOrderId=" + salesOrderId + "",
+                    "dataSrc": function (data) {
+
+                        return data.lines
+                    }
+                },
+                "columns": [
+                    { "data": "product.name" },
+                    { "data": "quantity" },
+                    { "data": "price" },
+                    { "data": "subTotal" },
+                    { "data": "discount" },
+                    { "data": "total" }
+                ],
+                "language": {
+                    "emptyTable": "data is empty."
+                },
+                "lengthChange": false,
+                "bFilter": false,
+                "paging": false,
+                "info": false
+            });
+
+            return false;
+        }
+    </script>
+}

@@ -1,0 +1,202 @@
+﻿@model core22.Models.POS.Models.GoodsReceive
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+<h4>GoodsReceive</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="GoodsReceiveId" />
+            <div class="form-group">
+                <label asp-for="Number" class="control-label"></label>
+                <input asp-for="Number" class="form-control" readonly />
+                <span asp-validation-for="Number" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Description" class="control-label"></label>
+                <input asp-for="Description" class="form-control" />
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="GoodsReceiveDate" class="control-label"></label>
+                <input asp-for="GoodsReceiveDate" class="form-control" />
+                <span asp-validation-for="GoodsReceiveDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="PurchaseOrderId" class="control-label"></label>
+                <input class="form-control" value="@Model.PurchaseOrder.Number" readonly/>
+                <span asp-validation-for="PurchaseOrderId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" /> | <a asp-action="Index">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-md-12">
+        <table class="table" id="gridLine" style="width:100%">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">Product</th>
+                    <th scope="col">Qty. Purchase</th>
+                    <th scope="col">Qty. Receive</th>
+                    <th scope="col">Qty. Received</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+<!--Modal-->
+<div class="modal fade" id="modal-dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Purchase Order: @Model.PurchaseOrder.Number </h4>
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Product</label>
+                            <input class="form-control" id="productName" readonly/>
+                            <hidden id="goodsReceiveLineId"></hidden>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Quantity Purchase</label>
+                            <input class="form-control" id="quantityPurchase" readonly/>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Quantity Receive</label>
+                            <input class="form-control" id="quantityReceive" type="number"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="javascript:;" class="btn btn-white" data-dismiss="modal">Close</a>
+                <a href="javascript:;" class="btn btn-success" onclick="saveLine()" >Save</a>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Modal-->
+
+@section Scripts{
+    <script>
+
+        $(document).ready(function () {
+
+            initGridLine();
+
+        });
+
+        function initGridLine() {
+            var goodsReceiveId = $("#GoodsReceiveId").val();
+
+            $("#gridLine").DataTable({
+                "ajax": {
+                    "type": "GET",
+                    "url": "/api/GoodsReceiveLine/GetLines?goodsReceiveId=" + goodsReceiveId + "",
+                    "dataSrc": function (data) {
+
+                        return data.lines
+                    }
+                },
+                "columns": [
+                    { "data": "product.name" },
+                    { "data": "qtyPurchase" },
+                    { "data": "qtyReceive" },
+                    { "data": "qtyReceived" },
+                    {
+                        "data": "goodsReceiveLineId",
+                        "render": function (data) {
+                            var btnReceive = '<button onclick="quantityReceive(\'' + data + '\')" class="btn btn-info">Quantity Receive</button>';
+                            return btnReceive;
+                        }
+                    }
+                ],
+                "language": {
+                    "emptyTable": "data is empty."
+                },
+                "lengthChange": false,
+                "bFilter": false,
+                "paging": false,
+                "info": false
+            });
+
+            return false;
+        }
+
+        function openModal() {
+
+            $("#modal-dialog").modal({
+                backdrop: 'static',
+                keyboard: false
+            });
+
+            return false;
+        }
+
+        function closeModal() {
+            $('#modal-dialog').modal("hide");
+            return false;
+        }
+
+        function quantityReceive(goodsReceiveLineId) {
+            axios.get('/api/GoodsReceiveLine/' + goodsReceiveLineId
+            )
+            .then(function (response) {
+                $("#productName").val(response.data.product.name);
+                $("#quantityPurchase").val(response.data.qtyPurchase);
+                $("#quantityReceive").val(response.data.qtyReceive);
+                $("#goodsReceiveLineId").val(response.data.goodsReceiveLineId);
+            })
+            .catch(function (error) {
+
+            })
+            .then(function () {
+                openModal();
+            });
+            return false;
+        }
+
+        function saveLine() {
+            var goodsReceiveLineId = $("#goodsReceiveLineId").val();
+
+            axios.put('/api/GoodsReceiveLine/' + goodsReceiveLineId, {
+                "GoodsReceiveLineId": goodsReceiveLineId,
+                "QtyReceive": $("#quantityReceive").val()
+            })
+            .then(function (response) {
+                $("#gridLine").DataTable().ajax.reload();
+            })
+            .catch(function (error) {
+
+            })
+            .then(function () {
+                closeModal();
+            });
+
+            return false;
+        }
+
+    </script>
+}

@@ -1,0 +1,283 @@
+﻿
+@{
+    ViewData["Title"] = "POS";
+}
+
+<h1>POS - Point of sales</h1>
+<div class="row">
+    <div class="col-md-5">
+        <table class="table" id="productLine" style="width:100%">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">Product</th>
+                    <th scope="col">Price (Sell)</th>
+                    <th scope="col">Price (Purchase)</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+    <div class="col-md-7">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="control-label">Order Number #</label>
+                    <input class="form-control" id="orderNumber" readonly />
+                    <hidden id="salesOrderId"></hidden>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="control-label">Product</label>
+                    <input class="form-control" id="product" readonly />
+                    <hidden id="productId"></hidden>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="control-label">Quantity</label>
+                    <input type="number" class="form-control" id="quantity" />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="control-label">Price</label>
+                    <input type="number" class="form-control" id="price" />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <table class="table" id="posLine" style="width:100%">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">Product</th>
+                            <th scope="col">Price</th>
+                            <th scope="col">Qty</th>
+                            <th scope="col">SubTotal</th>
+                            <th scope="col">Disc.</th>
+                            <th scope="col">Total</th>
+                            <th scope="col"></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="control-label">Total</label>
+                    <input class="form-control" id="total" readonly />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="control-label">Payment</label>
+                    <input type="number" class="form-control" id="payment" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="control-label">Change</label>
+                    <input class="form-control" id="change" readonly />
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <button onclick="initiateNewPOSOrder()" class="btn btn-block btn-success">New</button>
+            </div>
+            <div class="col-md-4">
+                <button onclick="posLineInsert()" class="btn btn-block btn-warning">Insert</button>
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-block btn-danger">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles{
+    <!--numpad-->
+    <link rel="stylesheet" href="~/lib/jquerey-numpad/jquery.numpad.css" />
+    <!--numpad-->
+    <style type="text/css">
+        .nmpd-grid {
+            border: none;
+            padding: 20px;
+            background: white;
+        }
+
+        .nmpd-grid > tbody > tr > td {
+            border: none;
+        }
+
+       
+    </style>
+}
+
+@section Scripts{
+    <script>
+        // These defaults will be applied to all NumPads within this document!
+        $.fn.numpad.defaults.gridTpl = '<table class="table modal-content"></table>';
+        $.fn.numpad.defaults.backgroundTpl = '<div class="modal-backdrop in"></div>';
+        $.fn.numpad.defaults.displayTpl = '<input type="text" class="form-control" />';
+        $.fn.numpad.defaults.buttonNumberTpl = '<button type="button" class="btn btn-default"></button>';
+        $.fn.numpad.defaults.buttonFunctionTpl = '<button type="button" class="btn" style="width: 100%;"></button>';
+        $.fn.numpad.defaults.onKeypadCreate = function () { $(this).find('.done').addClass('btn-primary'); };
+        // jquery numpad
+
+        $(document).ready(function () {
+            //numpad
+            $('#quantity').numpad();
+            $('#price').numpad();
+            $('#payment').numpad();
+
+            //datatables
+            initProductLine();
+        });
+
+        function initPosLine() {
+            var salesOrderId = $("#salesOrderId").val();
+
+            $("#posLine").DataTable({
+                "destroy": true,
+                "ajax": {
+                    "type": "GET",
+                    "url": "/api/SalesOrderLine/GetLines?salesOrderId=" + salesOrderId + "",
+                    "dataSrc": function (data) {
+
+                        return data.lines
+                    }
+                },
+                "columns": [
+                    { "data": "product.name" },
+                    { "data": "quantity" },
+                    { "data": "price" },
+                    { "data": "subTotal" },
+                    { "data": "discount" },
+                    { "data": "total" },
+                    {
+                        "data": "salesOrderLineId",
+                        "render": function (data) {
+                            var btnDelete = '<button onclick="deleteLine(\'' + data + '\')" class="btn btn-danger">DELETE</button>';
+                            return btnDelete;
+                        }
+                    }
+                ],
+                "language": {
+                    "emptyTable": "data is empty."
+                },
+                "lengthChange": false,
+                "bFilter": false,
+                "paging": false,
+                "info": false
+            });
+
+            return false;
+        }
+
+        function initProductLine() {
+
+            $("#productLine").DataTable({
+                "ajax": {
+                    "type": "GET",
+                    "url": "/api/Product",
+                    "dataSrc": function (data) {
+                        return data;
+                    }
+                },
+                "columns": [
+                    { "data": "name" },
+                    { "data": "priceSell" },
+                    { "data": "pricePurchase" },
+                    {
+                        "data": "productId",
+                        "render": function (data) {
+                            var btnSelect = '<button onclick="selectProduct(\'' + data +'\')" class="btn btn-info">Select</button>';
+                            return btnSelect;
+                        }
+                    }
+                ],
+                "language": {
+                    "emptyTable": "data is empty."
+                },
+                "lengthChange": false,
+                "pageLength": 5,
+                "bFilter": false,
+                "paging": true,
+                "info": false
+            });
+
+            return false;
+        }
+
+        function selectProduct(productId) {
+            var salesOrderNumber = $("#orderNumber").val();
+            if (salesOrderNumber) {
+
+                axios.get('/api/Product/' + productId
+                )
+                .then(function (response) {
+                    $("#productId").val(response.data.productId);
+                    $("#product").val(response.data.name);
+                    $("#price").val(response.data.priceSell);
+                    $("#quantity").val(1);
+                    toastr.success(response.data.name + ' is selected.', 'Success')
+                })
+                .catch(function (error) {
+
+                })
+                .then(function () {
+
+                });
+
+            } else {
+                toastr.error('Order Number # empty. Please create new order first.', 'Error')
+            }
+
+            return false;
+        }
+
+        function initiateNewPOSOrder() {
+            axios.post('/api/SalesOrder/InitiateNewPOSTrans'
+            )
+            .then(function (response) {
+                $("#orderNumber").val(response.data.number);
+                $("#salesOrderId").val(response.data.salesOrderId);
+                initPosLine();
+                toastr.success('New order created with number: ' + response.data.number, 'Success')
+            })
+            .catch(function (error) {
+
+            })
+            .then(function () {
+
+            });
+            return false;
+        }
+
+        function posLineInsert() {
+            axios.post('/api/SalesOrderLine', {
+                "SalesOrderId": $("#salesOrderId").val(),
+                "ProductId": $("#productId").val(),
+                "Quantity": $("#quantity").val(),
+                "Price": $("#price").val()
+            })
+            .then(function (response) {
+                var product = $("#product").val();
+                $("#posLine").DataTable().ajax.reload();
+                toastr.success('Insert POS line success for item: ' + product, 'Success');
+            })
+            .catch(function (error) {
+
+            })
+            .then(function () {
+
+            });
+            return false;
+        }
+
+    </script>
+}
+

@@ -1,0 +1,210 @@
+﻿@model core22.Models.POS.Models.SalesOrder
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+<h4>SalesOrder</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="SalesOrderId" />
+            <div class="form-group">
+                <label asp-for="Number" class="control-label"></label>
+                <input asp-for="Number" class="form-control" readonly />
+                <span asp-validation-for="Number" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Description" class="control-label"></label>
+                <input asp-for="Description" class="form-control" />
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="SalesOrderDate" class="control-label"></label>
+                <input asp-for="SalesOrderDate" class="form-control" />
+                <span asp-validation-for="SalesOrderDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="CustomerId" class="control-label"></label>
+                <select asp-for="CustomerId" class="form-control" asp-items="ViewBag.CustomerId"></select>
+                <span asp-validation-for="CustomerId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" /> | <a asp-action="Index">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 text-right">
+        <button class="btn btn-info" onclick="openModal()">ADD</button>
+    </div>
+    <div class="col-md-12">
+        <table class="table" id="gridLine" style="width:100%">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">Product</th>
+                    <th scope="col">Quantity</th>
+                    <th scope="col">Price</th>
+                    <th scope="col">SubTotal</th>
+                    <th scope="col">Discount</th>
+                    <th scope="col">Total</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+<!--Modal-->
+<div class="modal fade" id="modal-dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Sales Order: @Model.Number </h4>
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Product</label>
+                            <select class="form-control" id="ProductId" asp-items="ViewBag.ProductId"></select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Quantity</label>
+                            <input class="form-control" id="Quantity" value="0" />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Price</label>
+                            <input class="form-control" id="Price" value="0" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="javascript:;" class="btn btn-white" data-dismiss="modal">Close</a>
+                <a href="javascript:;" class="btn btn-success" onclick="saveLine()">Save</a>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Modal-->
+
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        $(document).ready(function () {
+            initGridLine();
+        });
+
+        function initGridLine() {
+            var salesOrderId = $("#SalesOrderId").val();
+
+            $("#gridLine").DataTable({
+                "ajax": {
+                    "type": "GET",
+                    "url": "/api/SalesOrderLine/GetLines?salesOrderId=" + salesOrderId +"",
+                    "dataSrc": function (data) {
+
+                        return data.lines
+                    }
+                },
+                "columns": [
+                    { "data": "product.name" },
+                    { "data": "quantity" },
+                    { "data": "price" },
+                    { "data": "subTotal" },
+                    { "data": "discount" },
+                    { "data": "total" },
+                    {
+                        "data": "salesOrderLineId",
+                        "render": function (data) {
+                            var btnDelete = '<button onclick="deleteLine(\''+data+'\')" class="btn btn-danger">DELETE</button>';
+                            return btnDelete;
+                        }
+                    }
+                ],
+                "language": {
+                    "emptyTable": "data is empty."
+                },
+                "lengthChange": false,
+                "bFilter": false,
+                "paging": false,
+                "info": false
+            });
+
+            return false;
+        }
+
+        function openModal() {
+
+            $("#modal-dialog").modal({
+                backdrop: 'static',
+                keyboard: false
+            });
+
+            return false;
+        }
+
+        function closeModal() {
+            $('#modal-dialog').modal("hide");
+            return false;
+        }
+
+        function saveLine() {
+            var quantity = $("#Quantity").val();
+            var price = $("#Price").val();
+            axios.post('/api/SalesOrderLine', {
+                "SalesOrderId": $("#SalesOrderId").val(),
+                "ProductId": $("#ProductId").val(),
+                "Quantity": quantity,
+                "Price": price,
+                "SubTotal": quantity * price,
+                "Discount": 0,
+                "Total": quantity * price
+            })
+            .then(function (response) {
+                $("#gridLine").DataTable().ajax.reload();
+            })
+            .catch(function (error) {
+
+            })
+            .then(function () {
+                closeModal();
+            });
+
+
+            return false;
+        }
+
+        function deleteLine(salesOrderLineId) {
+
+            axios.delete('/api/SalesOrderLine/' + salesOrderLineId)
+            .then(function (response) {
+                $("#gridLine").DataTable().ajax.reload();
+            })
+            .catch(function (error) {
+
+            })
+            .then(function () {
+
+            });
+            return false;
+        }
+
+    </script>
+}
