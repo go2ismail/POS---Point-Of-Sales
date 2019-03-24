@@ -3,7 +3,7 @@
 Proof of concept of point of sales developed using Asp.Net core 2.2.
 
 
-![sc1](code22/wwwroot/sc/sc1.png)
+![sc1](core22/wwwroot/sc/sc1.png)
 
 Features:
 
@@ -16,9 +16,9 @@ Features:
 7. inventory transactions
 8. POS form / screen
 
-![sc2](code22/wwwroot/sc/sc2.png)
-![sc3](code22/wwwroot/sc/sc3.png)
-![sc4](code22/wwwroot/sc/sc4.png)
+![sc2](core22/wwwroot/sc/sc2.png)
+![sc3](core22/wwwroot/sc/sc3.png)
+![sc4](core22/wwwroot/sc/sc4.png)
 
 Technical:
 
